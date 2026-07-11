@@ -41,23 +41,22 @@ so the demo survives a noisy room and a dead model API.
 ## Quickstart
 
 ```bash
-git clone <this-repo> && cd safereturn
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env        # fill in what you have; everything degrades gracefully
+git clone <this-repo> && cd discharge-agent-araya-hackathon
+uv pip install -r requirements.txt
+# .env already scaffolded at repo root — see docs/GOLIVE.md for what to fill in
 
 # 1. Develop WITHOUT a phone (text simulator — start here):
-python scripts/test_conversation.py harold
+uv run python scripts/test_conversation.py harold
 
 # 2. Run the server:
-uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 
-# 3. Expose it and wire Twilio:
+# 3. Expose it and wire Twilio (full checklist: docs/GOLIVE.md):
 ngrok http 8000             # put the https URL in .env as PUBLIC_BASE_URL
 
 # 4. Trigger a real call:
-python scripts/trigger_call.py margaret
-python scripts/trigger_call.py harold      # the red-path demo
+uv run python scripts/trigger_call.py margaret
+uv run python scripts/trigger_call.py harold   # the red-path demo
 
 # 5. Dashboard:
 open http://localhost:8000/dashboard
@@ -79,6 +78,7 @@ scripts/
   test_conversation.py  Text-mode simulator — develop the conversation with no phone
   trigger_call.py       Kick off an outbound Twilio call
 docs/
+  GOLIVE.md          Twilio + Groq wiring checklist — read this to start testing
   ARCHITECTURE.md    System design + model choice rationale
   STATE_MACHINE.md   Full conversation spec (the source of truth)
   DEMO.md            Demo script, fallback ladder, rehearsal checklist
