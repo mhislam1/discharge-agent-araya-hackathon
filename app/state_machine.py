@@ -5,6 +5,8 @@ Invariants enforced here (AGENTS.md):
   #2 the state machine decides; templates only are spoken
   #6 idempotent escalations
 """
+import time
+
 from . import escalation, store
 
 # ---- fixed scripts (spoken verbatim; never LLM-generated) ----
@@ -61,7 +63,7 @@ def _escalate(session: dict, level: str, trigger: str, detail: str) -> None:
     session["fired_triggers"].add(key)
     msg = escalation.send(level, _p(session), trigger, detail)
     session["escalations"].append(
-        {"level": level, "trigger": trigger, "message": msg})
+        {"level": level, "trigger": trigger, "message": msg, "ts": time.time()})
     store.raise_status(session, level)
 
 

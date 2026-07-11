@@ -5,10 +5,14 @@ import time
 SEVERITY = {"gray": 0, "in_call": 1, "green": 2, "amber": 3, "red": 4}
 
 _sessions: dict[str, dict] = {}
+_seq = 0  # monotonic call order; wall clock can jump backwards under WSL2
 
 
 def new_session(patient_id: str, patient: dict) -> dict:
+    global _seq
+    _seq += 1
     s = {
+        "seq": _seq,
         "patient_id": patient_id,
         "patient": patient,
         "state": "GREET",

@@ -93,10 +93,20 @@ async def trigger_call(pid: str):
 
 @app.get("/api/status")
 async def status():
-    known = [{"patient_id": k, "name": v["full_name"], "status": "gray",
-              "state": "-", "escalations": [], "transcript": []}
-             for k, v in PATIENTS.items() if not store.get_session(k)]
-    return known + store.snapshot()
+    out = []
+    for pid, p in PATIENTS.items():
+        row = {"patient_id": pid, "name": p["full_name"], "phone": p["phone"],
+               "practice": p["practice"], "discharged": p["discharged"],
+               "new_med": p["new_med"], "stopped_med": p["stopped_med"],
+               "status": "gray", "state": "-", "done": False,
+               "escalations": [], "transcript": []}
+        s = store.get_session(pid)
+        if s:
+            row.update(status=s["status"], state=s["state"], done=s["done"],
+                       seq=s["seq"], escalations=s["escalations"],
+                       transcript=s["transcript"][-12:])
+        out.append(row)
+    return out
 
 
 @app.get("/dashboard")
