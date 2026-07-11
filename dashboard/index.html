@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafeReturn — Nurse Triage Board</title>
+<style>
+  :root{--ink:#12313B;--paper:#F6F8F7;--line:#D8E2E0;--green:#2F8F63;--amber:#C08A1E;--red:#C2452D;--gray:#8AA0A5;--incall:#147D77}
+  body{font-family:system-ui,sans-serif;background:var(--paper);color:var(--ink);margin:0;padding:28px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#5c757c;font-size:13px;margin-bottom:22px}
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;border-top:5px solid var(--gray)}
+  .card.green{border-top-color:var(--green)} .card.amber{border-top-color:var(--amber)}
+  .card.red{border-top-color:var(--red)} .card.in_call{border-top-color:var(--incall)}
+  .name{font-weight:600;font-size:16px}
+  .status{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border-radius:999px;margin:8px 0;color:#fff;background:var(--gray)}
+  .green .status{background:var(--green)}.amber .status{background:var(--amber)}
+  .red .status{background:var(--red)}.in_call .status{background:var(--incall)}
+  .esc{font-size:12.5px;background:#FBE9E4;border:1px solid #F0C4B8;border-radius:6px;padding:8px 10px;margin-top:8px;font-family:ui-monospace,monospace}
+  .esc.amber{background:#FBF1DC;border-color:#EAD3A0}
+  .state{font-size:12px;color:#5c757c}
+</style>
+</head>
+<body>
+<h1>SafeReturn — Nurse Triage Board</h1>
+<div class="sub">Post-discharge medication check-ins · auto-refreshes every 2 s
+  · <b>green</b> confirmed · <b>amber</b> friction → coordinator · <b>red</b> danger → nurse now</div>
+<div class="board" id="board"></div>
+<script>
+async function refresh(){
+  try{
+    const res = await fetch('/api/status');
+    const patients = await res.json();
+    document.getElementById('board').innerHTML = patients.map(p => `
+      <div class="card ${p.status}">
+        <div class="name">${p.name}</div>
+        <span class="status">${p.status.replace('_',' ').toUpperCase()}</span>
+        <div class="state">call state: ${p.state}</div>
+        ${p.escalations.map(e => `<div class="esc ${e.level}">▲ ${e.message}</div>`).join('')}
+      </div>`).join('');
+  }catch(e){ /* server restarting; keep polling */ }
+}
+refresh(); setInterval(refresh, 2000);
+</script>
+</body>
+</html>

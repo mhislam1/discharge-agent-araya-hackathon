@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeReturn — Team Brief · AI Healthcare Hack NYC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12313B;
+    --ink-soft:#3E5A62;
+    --paper:#F6F8F7;
+    --card:#FFFFFF;
+    --line:#D8E2E0;
+    --teal:#147D77;
+    --green:#2F8F63;
+    --green-bg:#E7F3EC;
+    --amber:#C08A1E;
+    --amber-bg:#FBF1DC;
+    --red:#C2452D;
+    --red-bg:#FBE9E4;
+    --mono:'IBM Plex Mono',monospace;
+    --sans:'IBM Plex Sans',sans-serif;
+    --disp:'Bricolage Grotesque',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *{animation:none!important;transition:none!important}}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65}
+  a{color:var(--teal)}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px}
+
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--line);background:var(--card)}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 0;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+  .topbar .tag{color:var(--teal);font-weight:600}
+  .hero{padding:56px 0 48px}
+  .hero h1{font-family:var(--disp);font-weight:800;font-size:clamp(38px,6vw,60px);line-height:1.04;letter-spacing:-0.015em}
+  .hero h1 em{font-style:normal;color:var(--teal)}
+  .hero .sub{margin-top:18px;max-width:620px;font-size:18px;color:var(--ink-soft)}
+  .hero .meta{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-family:var(--mono);font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper)}
+  .chip b{font-weight:600;color:var(--teal)}
+
+  /* ---------- triage legend (structural device used throughout) ---------- */
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;font-family:var(--mono);font-size:12px}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)}
+
+  /* ---------- toc ---------- */
+  nav.toc{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:0;padding-bottom:0}
+  nav.toc a{font-family:var(--mono);font-size:12.5px;text-decoration:none;color:var(--ink-soft);padding:12px 12px;white-space:nowrap;border-bottom:2px solid transparent}
+  nav.toc a:hover,nav.toc a:focus-visible{color:var(--teal);border-bottom-color:var(--teal)}
+
+  /* ---------- sections ---------- */
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:600;margin-bottom:10px}
+  h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,3.6vw,34px);letter-spacing:-0.01em;margin-bottom:18px}
+  h3{font-family:var(--disp);font-weight:700;font-size:19px;margin:26px 0 8px}
+  p{margin-bottom:14px;max-width:70ch}
+  p:last-child{margin-bottom:0}
+  strong{font-weight:600}
+  .callout{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:8px;padding:18px 20px;margin:20px 0;max-width:none}
+  .callout p{max-width:none}
+  .callout.warn{border-left-color:var(--amber);background:var(--amber-bg)}
+  .callout.danger{border-left-color:var(--red);background:var(--red-bg)}
+
+  /* ---------- cards grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:20px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .card h4{font-family:var(--disp);font-weight:700;font-size:16px;margin-bottom:6px}
+  .card p{font-size:14.5px;color:var(--ink-soft);margin:0;max-width:none}
+  .card .k{font-family:var(--mono);font-size:11.5px;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:8px;font-weight:600}
+
+  /* ---------- escalation ladder ---------- */
+  .ladder{display:flex;flex-direction:column;gap:10px;margin:20px 0}
+  .rung{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 18px}
+  .rung .pill{flex-shrink:0;font-family:var(--mono);font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:999px;margin-top:2px}
+  .rung.g .pill{background:var(--green-bg);color:var(--green)}
+  .rung.a .pill{background:var(--amber-bg);color:var(--amber)}
+  .rung.r .pill{background:var(--red-bg);color:var(--red)}
+  .rung p{font-size:14.5px;margin:0;max-width:none}
+
+  /* ---------- build timeline ---------- */
+  .timeline{margin:22px 0;border-left:2px solid var(--line);padding-left:0;list-style:none}
+  .timeline li{position:relative;padding:0 0 26px 30px}
+  .timeline li:last-child{padding-bottom:0}
+  .timeline li::before{content:'';position:absolute;left:-7px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--teal)}
+  .timeline .t{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--teal);display:block;margin-bottom:3px}
+  .timeline h4{font-family:var(--disp);font-weight:700;font-size:16.5px;margin-bottom:5px}
+  .timeline p{font-size:14.5px;color:var(--ink-soft);margin:0;max-width:none}
+  .timeline .owner{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:2px 7px;margin-left:8px}
+
+  /* ---------- transcript (signature element) ---------- */
+  .phone{background:var(--ink);border-radius:16px;padding:26px 22px;margin:24px 0;color:#E9F1F0}
+  .phone .callmeta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:#8FB0AC;margin-bottom:18px;flex-wrap:wrap;gap:6px}
+  .phone .callmeta .live{color:#7BE0A8}
+  .phone .live::before{content:'●';margin-right:6px;animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .line{display:flex;gap:12px;margin-bottom:14px;font-size:14.5px;line-height:1.55}
+  .line .who{flex-shrink:0;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;width:64px;text-align:right;padding-top:3px}
+  .line.agent .who{color:#7BD4CE}
+  .line.patient .who{color:#E8C77B}
+  .line .bubble{background:rgba(255,255,255,.07);border-radius:10px;padding:9px 13px;max-width:560px}
+  .line.patient .bubble{background:rgba(232,199,123,.12)}
+  .sysline{font-family:var(--mono);font-size:12px;color:#F0A08C;background:rgba(194,69,45,.18);border:1px solid rgba(194,69,45,.4);border-radius:8px;padding:10px 14px;margin:16px 0 4px}
+  .sysline b{color:#FFC9B8}
+
+  /* ---------- rubric table ---------- */
+  table{width:100%;border-collapse:collapse;margin:20px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14.5px}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:var(--teal);padding:12px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+  td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td:first-child{font-weight:600;white-space:nowrap}
+
+  /* ---------- checklist ---------- */
+  .check{list-style:none;margin:16px 0}
+  .check li{padding:10px 0 10px 34px;position:relative;border-bottom:1px dashed var(--line);font-size:15px}
+  .check li::before{content:'';position:absolute;left:0;top:13px;width:16px;height:16px;border:2px solid var(--teal);border-radius:4px}
+  .check li code{font-family:var(--mono);font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+
+  footer{padding:36px 0 56px;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  @media(max-width:560px){
+    .line .who{width:48px}
+    .hero{padding:40px 0 34px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <span class="tag">TEAM BRIEF · v1</span>
+      <span>AI Healthcare Hack NYC · Jul 11, 2026 · deadline 3:30 PM EDT</span>
+    </div>
+    <div class="hero">
+      <h1>SafeReturn<br><em>The post-discharge medication safety net.</em></h1>
+      <p class="sub">An AI voice agent that makes the follow-up calls nurses can't — during the 30 days after hospital discharge that decide whether a patient bounces back. It confirms the med list, catches dangerous errors, and escalates anything abnormal to a human. It never gives medical advice.</p>
+      <div class="meta">
+        <span class="chip">Sponsor req: <b>Twilio telephony</b> ✓</span>
+        <span class="chip">Build window: <b>~3 hrs</b></span>
+        <span class="chip">Team: <b>3 people + Claude Code</b></span>
+      </div>
+      <div class="legend">
+        <span><span class="dot g"></span> GREEN — all confirmed, log it</span>
+        <span><span class="dot a"></span> AMBER — friction, notify coordinator</span>
+        <span><span class="dot r"></span> RED — danger, escalate to nurse now</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <div class="wrap">
+    <a href="#why">Why this wins</a>
+    <a href="#what">What we build</a>
+    <a href="#call">The call</a>
+    <a href="#arch">Architecture</a>
+    <a href="#plan">Build plan</a>
+    <a href="#demo">Demo script</a>
+    <a href="#rubric">Rubric map</a>
+    <a href="#stack">Sponsor stack</a>
+    <a href="#start">Get started</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="why">
+  <div class="eyebrow">01 · The problem &amp; the economics</div>
+  <h2>Why this wins</h2>
+  <p>The 30 days after hospital discharge are the highest-risk medication window in healthcare. Med lists change at discharge — new drugs added, old ones stopped, doses altered — and patients leave confused. Medication problems in this window are a leading driver of 30-day readmissions.</p>
+  <p>Here's the part that makes this a business and not a wellness app: <strong>this phone call already exists, is already mandated, and is already paid for.</strong> Medicare reimburses clinics for Transitional Care Management (TCM), which requires contacting the patient within two business days of discharge — and Medicare penalizes hospitals for excess readmissions. Today those calls are made manually by nurses, and many clinics leave the reimbursement on the table because they can't staff them.</p>
+  <div class="callout">
+    <p><strong>Our one-line pitch:</strong> "Clinics are paid to make these calls and can't staff them. Hospitals are penalized for the readmissions these calls prevent. We automate the call — and escalate the judgment to humans."</p>
+  </div>
+  <p>This maps directly onto the hackathon brief: a full conversation end-to-end, grounded in domain knowledge (the patient's actual discharge med list), personalized to each caller, with reliability and guardrails as the bar. And it maps onto the host: Arya Health's thesis is the <em>economics</em> of healthcare services. This is a reimbursed-workflow automation story, not a chatbot story.</p>
+</section>
+
+<section id="what">
+  <div class="eyebrow">02 · Scope</div>
+  <h2>What we build (and what we don't)</h2>
+  <p>A working outbound voice agent + escalation system + tiny nurse dashboard. The demo <em>is</em> the product: call a patient, walk their discharge med list, catch a dangerous error, and land an escalation SMS in a judge's hand.</p>
+
+  <div class="grid">
+    <div class="card"><span class="k">Build for real</span><h4>Twilio voice flow</h4><p>Outbound call, scripted question sequence, DTMF capture on every question ("press 1 for yes"). Green path works before anything else.</p></div>
+    <div class="card"><span class="k">Build for real</span><h4>Conversation state machine</h4><p>States, transitions, escalation triggers. The LLM interprets and phrases; the state machine decides what happens next.</p></div>
+    <div class="card"><span class="k">Build for real</span><h4>Escalation via SMS</h4><p>Amber → coordinator text. Red → nurse text, immediately. This is the product's whole value: closing the loop.</p></div>
+    <div class="card"><span class="k">Build for real</span><h4>Nurse dashboard</h4><p>One HTML page polling the server: patient list, green/amber/red status, escalation log. Ugly-but-clear. 20 minutes, not 90.</p></div>
+    <div class="card"><span class="k">Hardcode &amp; confess</span><h4>Patient records</h4><p>Two patients in JSON. "In production this ingests the discharge summary / EHR — an integration problem, not a research problem."</p></div>
+    <div class="card"><span class="k">Hardcode &amp; confess</span><h4>Scheduling, auth, HIPAA</h4><p>Trigger calls manually in the demo. Name HIPAA/auth as known production requirements — naming it earns trust, ignoring it loses it.</p></div>
+  </div>
+
+  <div class="callout danger">
+    <p><strong>The one hard guardrail — say it on stage:</strong> the agent never gives medical advice. Any clinical question ("can I take ibuprofen with this?") gets a scripted deflection ("That's an important question for your nurse — I'm flagging it right now so they call you back") and a RED escalation. The guardrail isn't a limitation of the product; it <em>is</em> the product working correctly.</p>
+  </div>
+</section>
+
+<section id="call">
+  <div class="eyebrow">03 · The conversation</div>
+  <h2>The call, step by step</h2>
+  <p>Six beats. Every yes/no question also accepts keypad input, so a noisy demo room can't kill us.</p>
+  <div class="ladder">
+    <div class="rung g"><span class="pill">1 · GREET</span><p><strong>Identity + transparency.</strong> "Hi, is this Margaret? This is the care assistant calling on behalf of Dr. Chen's office after your hospital stay." Clearly an assistant — never impersonates a human.</p></div>
+    <div class="rung a"><span class="pill">2 · PICKUP</span><p><strong>Prescription pickup check.</strong> "You were prescribed a new medication, Eliquis. Were you able to pick it up from the pharmacy?" No → AMBER: coordinator gets an SMS. This one question catches one of the most common post-discharge failures.</p></div>
+    <div class="rung g"><span class="pill">3 · NEW MEDS</span><p><strong>Adherence walk-through</strong>, grounded in the discharge list: new meds started, changed doses confirmed.</p></div>
+    <div class="rung r"><span class="pill">4 · STOPPED</span><p><strong>The stopped-med trap — our jaw-drop moment.</strong> "The hospital stopped your old warfarin. Just to confirm, you're no longer taking that one?" Still taking both = RED. This is a real, dangerous, common error, and catching it live is the demo highlight.</p></div>
+    <div class="rung r"><span class="pill">5 · SYMPTOMS</span><p><strong>Red-flag screen</strong> tied to the meds: 2–3 yes/no questions ("any unusual bruising or bleeding?"). Yes → RED.</p></div>
+    <div class="rung g"><span class="pill">6 · CLOSE</span><p><strong>Warm sign-off + log.</strong> Outcome written to the status board. Also honest framing for judges: a "yes" confirms self-report, not ingestion — and self-report with escalation still beats the status quo by miles.</p></div>
+  </div>
+</section>
+
+<section id="arch">
+  <div class="eyebrow">04 · System design</div>
+  <h2>Architecture</h2>
+  <div class="grid">
+    <div class="card"><span class="k">Telephony</span><h4>Twilio Programmable Voice + SMS</h4><p>Outbound calls via the Voice API; ConversationRelay / Media Streams for streaming voice if we go free-form. SMS for all escalations. (Twilio = sponsor prize requirement.)</p></div>
+    <div class="card"><span class="k">Brain</span><h4>Open model, constrained (Gemma / MedGemma)</h4><p>A small open model classifies patient replies (yes / no / unclear / clinical question) — via Ollama locally, Groq, or Google AI Studio, swappable by one env var, with a regex fallback that keeps calls alive if every API dies. It does NOT choose the flow — the state machine does. This is our reliability story, verbatim.</p></div>
+    <div class="card"><span class="k">Server</span><h4>FastAPI or Express</h4><p>Holds patient records, the state machine, call/session state, escalation logic, and the dashboard endpoint. One process, one file if we want.</p></div>
+    <div class="card"><span class="k">Fallback</span><h4>DTMF everywhere</h4><p>Every question answerable by keypad. Free-form voice is a layer on top, and we decide at rehearsal which mode goes on stage.</p></div>
+    <div class="card"><span class="k">Tunnel</span><h4>ngrok</h4><p>Twilio webhooks → our laptop. Set up early; it's the classic time sink.</p></div>
+    <div class="card"><span class="k">Data</span><h4>Two hardcoded patients</h4><p>Margaret (clean, all green) and Harold (still taking his stopped warfarin → red). Two patients = the personalization demo.</p></div>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="eyebrow">05 · Execution</div>
+  <h2>Build plan — three hours, three people</h2>
+  <p>Rule of the day: <strong>a full green-path call working end-to-end before we touch the LLM.</strong> That's the safety net — if everything else slips, we still have a working demo.</p>
+  <ul class="timeline">
+    <li><span class="t">T+0:00 → 0:20</span><h4>Scaffold <span class="owner">all three</span></h4><p>Repo, server skeleton, ngrok up, Twilio account + number verified, the two patient records in JSON. Split: A = Twilio plumbing, B = state machine, C = dashboard + SMS.</p></li>
+    <li><span class="t">T+0:20 → 1:00</span><h4>Green path, end to end <span class="owner">A + B</span></h4><p>Outbound call fires, scripted questions play (TTS), DTMF answers captured, state machine advances, outcome logged. Margaret's clean call works fully.</p></li>
+    <li><span class="t">T+1:00 → 1:40</span><h4>LLM + voice answers <span class="owner">B, with A</span></h4><p>Layer Anthropic API + STT so patients can answer naturally; DTMF stays as fallback. Add the stopped-med trap and the advice-deflection guardrail (scripted deflection + RED).</p></li>
+    <li><span class="t">T+1:40 → 2:00</span><h4>Escalations + dashboard <span class="owner">C</span></h4><p>Amber/Red SMS to the "nurse" phone. Dashboard shows both patients, statuses flip live, escalation log renders.</p></li>
+    <li><span class="t">T+2:00 → 2:30</span><h4>Rehearse twice <span class="owner">all three</span></h4><p>Full run-through with real phones. Decide: free-form voice or structured DTMF on stage. Fix only what breaks the demo — no new features past this point.</p></li>
+    <li><span class="t">T+2:30 → 3:00</span><h4>Devpost page + pitch <span class="owner">C, with all</span></h4><p>Required: project name + one-liner, what/why, tools incl. how we used Twilio, team roles, demo link/video. Record a backup video of a clean run — insurance against live-demo gremlins.</p></li>
+  </ul>
+  <div class="callout warn">
+    <p><strong>Known time sinks — assign an owner now:</strong> Twilio trial-account verification of outbound numbers (verify all team + demo phones immediately), ngrok URL churn in webhooks, and STT latency tuning. If free-form voice isn't smooth by T+2:00, we ship structured voice + DTMF and it will still win.</p>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="eyebrow">06 · The three minutes that matter</div>
+  <h2>Demo script</h2>
+  <p><strong>Beat 1 (30s):</strong> the problem + economics one-liner, dashboard on screen — two patients, both gray. <strong>Beat 2 (60s):</strong> trigger Margaret's call, teammate answers on speaker, green path, status flips green. <strong>Beat 3 (75s):</strong> trigger Harold. This is the moment:</p>
+
+  <div class="phone" role="img" aria-label="Simulated call transcript showing the agent catching a stopped-medication error and escalating to a nurse">
+    <div class="callmeta"><span class="live">LIVE CALL · HAROLD K. · DISCHARGED JUL 8</span><span>twilio · +1 (929) ···-··41</span></div>
+    <div class="line agent"><span class="who">AGENT</span><div class="bubble">Hi, is this Harold? This is the care assistant calling on behalf of Dr. Chen's office after your hospital stay. I'd like to quickly go over your medications — it'll take two minutes.</div></div>
+    <div class="line patient"><span class="who">HAROLD</span><div class="bubble">Yes, that's fine.</div></div>
+    <div class="line agent"><span class="who">AGENT</span><div class="bubble">Great. The hospital started you on a new blood thinner, Eliquis. Have you been taking it twice a day?</div></div>
+    <div class="line patient"><span class="who">HAROLD</span><div class="bubble">Yes, morning and night, like the paper said.</div></div>
+    <div class="line agent"><span class="who">AGENT</span><div class="bubble">Perfect. One more thing — the hospital <strong>stopped</strong> your old warfarin. Just to confirm: you're no longer taking that one?</div></div>
+    <div class="line patient"><span class="who">HAROLD</span><div class="bubble">Oh… no, I've kept taking it. Nobody told me to stop — I take it with the new one.</div></div>
+    <div class="line agent"><span class="who">AGENT</span><div class="bubble">Thank you for telling me, Harold — that's exactly the kind of thing we check. I'm letting your nurse know right now, and someone will call you back shortly. Please don't change anything until you hear from them.</div></div>
+    <div class="sysline">▲ RED ESCALATION · SMS → nurse on-call: <b>"Harold K. reports taking BOTH warfarin (d/c'd 7/8) and Eliquis. Duplicate anticoagulation risk. Callback requested."</b></div>
+  </div>
+
+  <p>…and that SMS lands on a <strong>judge's phone, in their hand</strong>, while the dashboard flips red. <strong>Beat 4 (15s):</strong> close with the economics line. Note the agent never told Harold what to do medically — it flagged and escalated. Point that out explicitly.</p>
+</section>
+
+<section id="rubric">
+  <div class="eyebrow">07 · Scoring strategy</div>
+  <h2>Rubric map — hit every scored line</h2>
+  <table>
+    <thead><tr><th>Criterion (1–5)</th><th>Our answer</th></tr></thead>
+    <tbody>
+      <tr><td>Technical implementation</td><td>State-machine-governed LLM ("the LLM phrases, the state machine decides"), DTMF fallback on every question, idempotent escalation, graceful degradation. Production-shaped by design.</td></tr>
+      <tr><td>Idea uniqueness</td><td>Not a reminder app — a discharge-window safety net that catches the stopped-med error class, built on a workflow that's already mandated and reimbursed (TCM) but unstaffable.</td></tr>
+      <tr><td>Team explanation</td><td>The economics story: Medicare pays for the call, penalizes the readmission; nurses are the bottleneck. One sentence, everyone on the team can say it.</td></tr>
+      <tr><td>UI/UX</td><td>Voice designed for elderly users: slow pace, one question at a time, keypad fallback, transparent "I'm an assistant" framing. Plus the nurse dashboard: triage at a glance.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <p><strong>Anticipated judge pushback — have answers ready.</strong> "Isn't this just an IVR with an LLM?" → The value is the grounding (patient-specific med list), the error-class detection (stopped meds, duplicates), and the closed loop to a human. "How do you know he really took it?" → We don't — self-report plus escalation, and we say so. "HIPAA?" → Named as a production requirement: BAA-covered infra, consent at discharge, no PHI in logs. "Long-term vision?" → This is the wedge of a full personal medical secretary — we built the episode where it saves lives and gets reimbursed first.</p>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="eyebrow">08 · Sponsor stack</div>
+  <h2>How we use Twilio, Lovable &amp; Anthropic</h2>
+  <p>"How you used Twilio" is a required line on the Devpost submission, and Twilio must carry the telephony to qualify for sponsor prizes. We use it four ways — say that number in the pitch.</p>
+
+  <div class="grid">
+    <div class="card"><span class="k">Twilio · 1</span><h4>Programmable Voice (outbound)</h4><p>Server hits the Voice REST API to place the call. Twilio requests TwiML from our webhook (via ngrok) to drive the conversation.</p></div>
+    <div class="card"><span class="k">Twilio · 2</span><h4>&lt;Gather&gt; — structured mode</h4><p>Captures DTMF keypresses and basic speech on every question ("press 1 for yes"). Bulletproof in a noisy demo room. Build this first, always works.</p></div>
+    <div class="card"><span class="k">Twilio · 3</span><h4>ConversationRelay — free-form mode</h4><p>Call connects to a WebSocket on our server; Twilio handles STT/TTS streaming, we receive/send text. Exactly the product the AI Startup Searchlight celebrates — sponsor-depth points. Layer on top if time allows.</p></div>
+    <div class="card"><span class="k">Twilio · 4</span><h4>Programmable Messaging (SMS)</h4><p>Every amber/red escalation is a Twilio SMS to the nurse/coordinator phone — the judge's-hand moment. Twilio carries both halves of the loop: conversation and escalation.</p></div>
+    <div class="card"><span class="k">Lovable</span><h4>Nurse dashboard + landing page</h4><p>Prompt Lovable to generate the React triage board (patient cards, green/amber/red, escalation feed) pointed at our JSON endpoint — polished UI in ~15 min, buys UI/UX rubric points. Optional 5-min landing page for the Devpost link. Lovable renders state only; it never touches core logic.</p></div>
+    <div class="card"><span class="k">Open model</span><h4>Gemma / MedGemma — the constrained brain</h4><p>Interprets messy patient speech ("pharmacy didn't have it, daughter's picking it up Thursday" → pickup pending, AMBER). Health-tuned open model = great pitch line + self-hostable for PHI in production. Provider ladder: regex fallback → Ollama local → Groq (fastest hosted) → Google AI Studio. The state machine owns all flow and escalation decisions.</p></div>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>Trial-account trap:</strong> Twilio trial accounts can only call <em>verified</em> numbers. Verify every team + demo phone the moment we sit down. Decide at rehearsal whether stage mode is Gather (safe) or ConversationRelay (impressive) — Gather ships first regardless.</p>
+  </div>
+</section>
+
+<section id="start">
+  <div class="eyebrow">09 · Before we write a line of code</div>
+  <h2>Get-started checklist</h2>
+  <ul class="check">
+    <li>Twilio account created, phone number provisioned, <strong>all team + demo phone numbers verified</strong> (trial accounts can only call verified numbers — do this first, it's the #1 time sink)</li>
+    <li>Anthropic API key ready and tested with one request</li>
+    <li><code>ngrok</code> installed and authed on the laptop that will run the server</li>
+    <li>Repo created; skeleton: <code>server</code> (FastAPI/Express), <code>patients.json</code>, <code>dashboard.html</code></li>
+    <li>Margaret + Harold records written: name, discharge med list with <code>new / changed / stopped</code> flags, pharmacy-pickup flag, caregiver + nurse phone numbers</li>
+    <li>Roles agreed: A = Twilio plumbing · B = state machine + LLM · C = dashboard, SMS, Devpost page, backup video</li>
+    <li>The one-line pitch memorized by all three: <em>"Clinics are paid to make these calls and can't staff them; hospitals are penalized for the readmissions these calls prevent. We automate the call and escalate the judgment."</em></li>
+  </ul>
+  <p>Give this brief to Claude Code alongside the build plan — it contains the state flow, the escalation rules, and the architecture it needs to scaffold the whole thing.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">SAFERETURN · TEAM BRIEF · AI HEALTHCARE HACK NYC · BUILT DURING THE SPRINT, DEMOED LIVE · GUARDRAIL: THE AGENT NEVER GIVES MEDICAL ADVICE</div>
+</footer>
+
+</body>
+</html>
