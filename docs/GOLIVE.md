@@ -52,6 +52,12 @@ Dashboard: http://localhost:8000/dashboard (put this on the projector).
 ## 5. Smoke tests, cheapest first
 
 ```bash
+# a0) Voice transport is env-switched: VOICE_MODE=relay (ConversationRelay,
+#     streaming STT/TTS, barge-in) or VOICE_MODE=gather (webhooks — the
+#     battle-tested fallback if relay misbehaves ON STAGE). Restart after changing.
+#     Test the relay protocol without a phone (server must be running):
+uv run python scripts/test_relay.py harold
+
 # a) No phone: Groq classification in the terminal.
 #    Answer naturally: "yeah I picked it up", "no, I stopped it",
 #    "should I take ibuprofen with this?"  (expect: yes / yes / clinical_question)
