@@ -1,0 +1,38 @@
+{
+  "margaret": {
+    "name": "Margaret",
+    "full_name": "Margaret L.",
+    "practice": "Dr. Chen's office",
+    "phone": "+15550000001",
+    "discharged": "2026-07-08",
+    "new_med": {
+      "name": "Lisinopril",
+      "schedule_phrase": "once every morning"
+    },
+    "stopped_med": {
+      "name": "Amlodipine",
+      "risk_note": "dose overlap / hypotension risk"
+    },
+    "symptom_checks": [
+      "Have you felt dizzy or lightheaded when standing up?"
+    ]
+  },
+  "harold": {
+    "name": "Harold",
+    "full_name": "Harold K.",
+    "practice": "Dr. Chen's office",
+    "phone": "+15550000002",
+    "discharged": "2026-07-08",
+    "new_med": {
+      "name": "Eliquis",
+      "schedule_phrase": "twice a day, morning and night"
+    },
+    "stopped_med": {
+      "name": "Warfarin",
+      "risk_note": "duplicate anticoagulation risk"
+    },
+    "symptom_checks": [
+      "Have you noticed any unusual bruising or bleeding?"
+    ]
+  }
+}

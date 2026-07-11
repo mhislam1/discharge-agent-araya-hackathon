@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafeReturn — Triage</title>
+<style>
+  :root{
+    --paper:#FAF9F6; --ink:#161615; --muted:#6E6C65; --line:#E4E2DA;
+    --red:#C13A21; --red-tint:#FAEEE9; --red-line:#E8C4B8;
+    --amber:#9A6A00; --amber-tint:#F9F1DE; --amber-line:#E4D2A6;
+    --green:#2E7D4F; --green-tint:#EDF4EE;
+    --live:#0E756D; --live-tint:#E9F2F1;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font:15px/1.45 "Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+       -webkit-font-smoothing:antialiased}
+
+  /* ---------- header: black board bar ---------- */
+  header{background:var(--ink);color:#FAF9F6;display:flex;align-items:baseline;
+         gap:18px;padding:14px 28px}
+  .mark{font-size:19px;font-weight:800;letter-spacing:.04em}
+  .mark .sq{color:#E4593C}
+  .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9B9A93}
+  #clock{margin-left:auto;font-family:var(--mono);font-size:14px;color:#CFCEC7;
+         font-variant-numeric:tabular-nums}
+
+  /* ---------- stat strip ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+  .stat{padding:18px 28px 14px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat .n{font-size:46px;font-weight:800;line-height:1;letter-spacing:-.02em;
+           font-variant-numeric:tabular-nums}
+  .stat .l{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+           color:var(--muted);margin-top:6px}
+  .stat.alert .n{color:var(--red)}
+  .stat.live .n{color:var(--live)}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);
+       gap:0;align-items:start}
+  .col-left{padding:22px 28px;min-width:0}
+  .col-right{border-left:1px solid var(--line);position:sticky;top:0;
+             height:100vh;display:flex;flex-direction:column;min-width:0}
+  @media(max-width:980px){
+    main{grid-template-columns:1fr}
+    .col-right{position:static;height:auto;border-left:none;border-top:1px solid var(--line)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+
+  .rule{display:flex;align-items:baseline;gap:10px;margin:26px 0 12px;
+        border-bottom:2px solid var(--ink);padding-bottom:6px}
+  .rule:first-child{margin-top:0}
+  .rule h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin:0;font-weight:700}
+  .rule .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+  /* ---------- action queue ---------- */
+  .empty{border:1px dashed var(--line);padding:18px;color:var(--muted);font-size:14px}
+  .esc-card{border:1px solid var(--red-line);border-left:5px solid var(--red);
+            background:var(--red-tint);padding:14px 16px;margin-bottom:12px}
+  .esc-card.amber{border-color:var(--amber-line);border-left-color:var(--amber);
+                  background:var(--amber-tint)}
+  .esc-card.fresh{animation:land .5s ease-out}
+  @keyframes land{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+  .esc-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .esc-top .who{font-weight:800;font-size:17px}
+  .esc-top .at{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .esc-why{margin:6px 0 10px;font-size:14.5px}
+  .sms{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:#fff;
+       border:1px solid var(--line);padding:9px 11px;overflow-wrap:break-word}
+  .sms .to{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:5px}
+  .esc-act{margin-top:10px}
+  .btn{display:inline-block;text-decoration:none;background:var(--ink);color:#fff;
+       font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+       padding:8px 14px}
+  .btn span{font-family:var(--mono);letter-spacing:0;text-transform:none}
+
+  /* ---------- pills ---------- */
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+        text-transform:uppercase;padding:3px 9px;border:1px solid currentColor}
+  .pill.red{color:#fff;background:var(--red);border-color:var(--red)}
+  .pill.amber{color:#fff;background:var(--amber);border-color:var(--amber)}
+  .pill.green{color:var(--green)}
+  .pill.in_call{color:var(--live)}
+  .pill.gray{color:var(--muted)}
+
+  /* ---------- patient cards ---------- */
+  .patients{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .p-card{border:1px solid var(--line);background:#fff;padding:16px}
+  .p-card.red{border-color:var(--red-line);box-shadow:inset 0 4px 0 var(--red)}
+  .p-card.amber{border-color:var(--amber-line);box-shadow:inset 0 4px 0 var(--amber)}
+  .p-card.green{box-shadow:inset 0 4px 0 var(--green)}
+  .p-card.in_call{box-shadow:inset 0 4px 0 var(--live)}
+  .p-head{display:flex;align-items:center;gap:10px}
+  .p-head .nm{font-weight:800;font-size:18px;margin-right:auto}
+  .p-meta{font-family:var(--mono);font-size:12px;color:var(--muted);margin:7px 0 12px}
+  .meds{border-top:1px solid var(--line);padding-top:10px;font-size:14px}
+  .meds .lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+             color:var(--muted);margin-bottom:6px}
+  .med{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+  .med .sign{font-family:var(--mono);font-weight:700;width:12px}
+  .med.new .sign{color:var(--green)}
+  .med.stopped .sign{color:var(--red)}
+  .med.stopped .mname{text-decoration:line-through;color:var(--muted)}
+  .med .sched{color:var(--muted);font-size:12.5px}
+  .steps{display:flex;gap:4px;margin-top:12px}
+  .steps i{flex:1;height:4px;background:var(--line)}
+  .steps i.on{background:var(--ink)}
+  .steps i.hot{background:var(--live)}
+  .p-state{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+           color:var(--muted);margin-top:6px}
+
+  /* ---------- live call ---------- */
+  .call-head{padding:18px 22px 12px;border-bottom:2px solid var(--ink)}
+  .call-head h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+                margin:0 0 6px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .dot.on{background:var(--red);animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  .call-sub{font-size:14px}
+  .call-sub b{font-weight:800}
+  #ticker{flex:1;overflow-y:auto;padding:16px 22px;background:#fff}
+  .turn{margin-bottom:14px;max-width:100%}
+  .turn .who{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--muted);
+             margin-bottom:3px}
+  .turn.agent .who{color:var(--live)}
+  .turn .txt{font-family:var(--mono);font-size:13px;line-height:1.55;
+             overflow-wrap:break-word}
+  .turn.patient{border-left:3px solid var(--ink);padding-left:10px}
+  .turn.patient .txt{font-weight:600}
+  .call-idle{color:var(--muted);font-size:14px;padding:22px}
+</style>
+</head>
+<body>
+<header>
+  <div class="mark">SAFERETURN<span class="sq"> ▪</span></div>
+  <div class="tag">Post-discharge triage board</div>
+  <div id="clock">--:--:--</div>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<main>
+  <div class="col-left">
+    <div class="rule"><h2>Action queue</h2><span class="count" id="q-count"></span></div>
+    <div id="queue"></div>
+    <div class="rule"><h2>Patients</h2><span class="count" id="p-count"></span></div>
+    <div class="patients" id="patients"></div>
+  </div>
+
+  <aside class="col-right">
+    <div class="call-head">
+      <h2><span class="dot" id="live-dot"></span><span id="call-title">Call monitor</span></h2>
+      <div class="call-sub" id="call-sub">Waiting for first call</div>
+    </div>
+    <div id="ticker"><div class="call-idle">The conversation will appear here in real time.</div></div>
+  </aside>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const PILL  = {red:"URGENT", amber:"FOLLOW-UP", green:"CLEARED",
+               in_call:"ON CALL", gray:"AWAITING CALL"};
+const ROUTE = {red:"SMS dispatched → on-call nurse",
+               amber:"SMS dispatched → care coordinator"};
+const WHY   = {taking_stopped_med:"Still taking a stopped medication",
+               advice_requested:"Asked for medical advice",
+               rx_not_picked_up:"Prescription not picked up",
+               nonadherent_new_med:"Not taking new medication as prescribed",
+               declined_checkin:"Declined the check-in",
+               unreachable_midcall:"Could not complete the call"};
+const STEPS = ["GREET","PICKUP","NEW_MEDS","STOPPED","SYMPTOMS","CLOSE"];
+const STATE = {GREET:"Greeting",PICKUP:"Pharmacy pickup",NEW_MEDS:"New medication",
+               STOPPED:"Stopped-med check",SYMPTOMS:"Symptom screen",CLOSE:"Complete"};
+
+const why = t => WHY[t] || (t.startsWith("symptom_flag") ? "Reported a warning symptom"
+                                                          : t.replace(/_/g," "));
+const hhmmss = ts => new Date(ts*1000).toLocaleTimeString([],
+  {hour12:false, hour:"2-digit", minute:"2-digit", second:"2-digit"});
+
+let last = "";
+
+function render(ps){
+  const open = ps.flatMap(p => p.escalations.map(e => ({...e, p})))
+                 .sort((a,b) => (a.level===b.level ? b.ts-a.ts
+                                : a.level==="red" ? -1 : 1));
+  const reds = open.filter(e => e.level==="red").length;
+
+  // stats
+  const n = s => ps.filter(p => p.status===s).length;
+  $("stats").innerHTML = `
+    <div class="stat ${open.length?"alert":""}"><div class="n">${open.length}</div>
+      <div class="l">Needs action</div></div>
+    <div class="stat ${n("in_call")?"live":""}"><div class="n">${n("in_call")}</div>
+      <div class="l">On call now</div></div>
+    <div class="stat"><div class="n">${n("green")}</div><div class="l">Cleared</div></div>
+    <div class="stat"><div class="n">${n("gray")}</div><div class="l">Awaiting call</div></div>`;
+  document.title = reds ? `● ${reds} URGENT — SafeReturn` : "SafeReturn — Triage";
+
+  // action queue
+  $("q-count").textContent = open.length ? `${open.length} open` : "";
+  $("queue").innerHTML = open.length ? open.map(e => `
+    <div class="esc-card ${e.level} ${Date.now()/1000 - e.ts < 5 ? "fresh" : ""}">
+      <div class="esc-top">
+        <span class="pill ${e.level}">${e.level==="red"?"▲ URGENT":"● FOLLOW-UP"}</span>
+        <span class="who">${esc(e.p.name)}</span>
+        <span class="at">${e.ts ? hhmmss(e.ts) : ""}</span>
+      </div>
+      <div class="esc-why">${esc(why(e.trigger))}</div>
+      <div class="sms"><span class="to">${ROUTE[e.level]}</span>${esc(e.message)}</div>
+      <div class="esc-act"><a class="btn" href="tel:${esc(e.p.phone)}">
+        Call back <span>${esc(e.p.phone)}</span></a></div>
+    </div>`).join("")
+    : `<div class="empty">No open escalations — all check-ins clear.</div>`;
+
+  // patient cards, worst first
+  const sev = {red:0, amber:1, in_call:2, gray:3, green:4};
+  $("p-count").textContent = `${ps.length} on 30-day watch`;
+  $("patients").innerHTML = [...ps].sort((a,b) => sev[a.status]-sev[b.status])
+    .map(p => {
+      const idx = p.done ? STEPS.length : STEPS.indexOf(p.state);
+      const bars = STEPS.slice(0,-1).map((_,i) =>
+        `<i class="${i<idx ? "on" : ""} ${i===idx && p.status==="in_call" ? "hot" : ""}"></i>`).join("");
+      return `
+      <div class="p-card ${p.status}">
+        <div class="p-head"><span class="nm">${esc(p.name)}</span>
+          <span class="pill ${p.status}">${PILL[p.status]}</span></div>
+        <div class="p-meta">discharged ${esc(p.discharged)} · ${esc(p.phone)}</div>
+        <div class="meds"><div class="lbl">Discharge medications</div>
+          <div class="med new"><span class="sign">+</span>
+            <span class="mname">${esc(p.new_med.name)}</span>
+            <span class="sched">${esc(p.new_med.schedule_phrase)}</span></div>
+          <div class="med stopped"><span class="sign">−</span>
+            <span class="mname">${esc(p.stopped_med.name)}</span>
+            <span class="sched">stopped — ${esc(p.stopped_med.risk_note)}</span></div>
+        </div>
+        <div class="steps">${bars}</div>
+        <div class="p-state">${p.status==="gray" ? "not yet called"
+          : p.done ? "call complete" : "call · " + (STATE[p.state]||p.state)}</div>
+      </div>`;}).join("");
+
+  // live call panel: active call, else most recent transcript
+  const active = ps.find(p => p.status==="in_call" && !p.done);
+  const called = ps.filter(p => p.transcript.length)
+                   .sort((a,b) => (b.seq||0)-(a.seq||0));
+  const shown  = active || called[0];
+  $("live-dot").className = "dot" + (active ? " on" : "");
+  if (shown){
+    $("call-title").textContent = active ? "Live call" : "Last call";
+    $("call-sub").innerHTML = `<b>${esc(shown.name)}</b> · ${esc(shown.phone)}` +
+      (active ? "" : " · ended");
+    const t = $("ticker");
+    const stick = t.scrollTop + t.clientHeight > t.scrollHeight - 60;
+    t.innerHTML = shown.transcript.map(m => `
+      <div class="turn ${m.who}">
+        <div class="who">${m.who==="agent" ? "SAFERETURN" : esc(shown.name).toUpperCase()}</div>
+        <div class="txt">${esc(m.text)}</div>
+      </div>`).join("");
+    if (stick) t.scrollTop = t.scrollHeight;
+  }
+}
+
+async function poll(){
+  try{
+    const r = await fetch("/api/status");
+    const body = await r.text();
+    if (body !== last){ last = body; render(JSON.parse(body)); }
+  }catch(e){ /* server restarting — keep polling */ }
+}
+setInterval(poll, 1500); poll();
+
+function tick(){ $("clock").textContent =
+  new Date().toLocaleTimeString([], {hour12:false}); }
+setInterval(tick, 1000); tick();
+</script>
+</body>
+</html>
