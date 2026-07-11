@@ -14,8 +14,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from . import config, llm, state_machine, store
+from .relay import router as relay_router
 
 app = FastAPI(title="SafeReturn")
+app.include_router(relay_router)
 PATIENTS = config.load_patients()
 DASH = Path(__file__).resolve().parent.parent / "dashboard" / "index.html"
 
@@ -50,6 +52,13 @@ async def voice_start(pid: str):
     patient = PATIENTS.get(pid)
     if not patient:
         return _twiml('<Say>Unknown patient. Goodbye.</Say><Hangup/>')
+    if config.VOICE_MODE == "relay":
+        ws_url = (config.PUBLIC_BASE_URL.replace("https://", "wss://")
+                  .replace("http://", "ws://") + f"/relay?pid={pid}")
+        return _twiml(
+            f'<Connect><ConversationRelay url="{ws_url}" dtmfDetection="true" '
+            f'interruptible="true">'
+            f'<Parameter name="pid" value="{pid}"/></ConversationRelay></Connect>')
     session = store.new_session(pid, patient)
     first = state_machine.prompt_for(session)
     session["transcript"].append({"who": "agent", "text": first})

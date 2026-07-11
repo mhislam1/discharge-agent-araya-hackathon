@@ -17,6 +17,7 @@ TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")   # the number we bought
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")          # ngrok https URL, no trailing slash
+VOICE_MODE = os.getenv("VOICE_MODE", "gather")  # gather | relay
 
 # --- Escalation targets (verified numbers on a trial account!) ---
 COORDINATOR_PHONE = os.getenv("COORDINATOR_PHONE", "")      # AMBER
