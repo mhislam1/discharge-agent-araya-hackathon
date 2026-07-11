@@ -20,23 +20,37 @@ Built at AI Healthcare Hack NYC (Arya Health × Twilio AI Startup Searchlight).
 ## How it works
 
 ```
- Twilio Voice ──► FastAPI webhook ──► State Machine (decides everything)
-      ▲                                    │
-      │  TwiML / ConversationRelay         │ classify utterance
-      │                                    ▼
-   Patient ◄── TTS prompt            LLM adapter (Gemma / MedGemma / Groq)
-                                           │
-                                           ▼
+ Twilio Voice ──► FastAPI ──────────► State Machine (decides everything)
+      ▲          two transports            │
+      │          (env-switched):           │ classify utterance
+      │           ConversationRelay        ▼
+   Patient        websocket (streaming    LLM adapter (regex-first →
+      │           STT/TTS, barge-in)      Groq llama-3.3-70b / Ollama / Gemini)
+      │           or <Gather> webhooks     │
+      ▼                                    ▼
                               GREEN log · AMBER/RED ──► Twilio SMS ──► Nurse
-                                           │
-                                           ▼
-                                   Dashboard (Lovable / dashboard/index.html)
+                                           │            (patient's own words
+                                           ▼             quoted in the SMS)
+                                   Nurse triage dashboard (live transcript)
 ```
 
 **Core invariant:** the LLM only *interprets* what the patient said
-(yes / no / unclear / clinical_question). The **state machine** owns the flow
-and every escalation decision. DTMF keypad input works on every question,
-so the demo survives a noisy room and a dead model API.
+(yes / no / unclear / question / clinical_question). The **state machine** owns
+the flow and every escalation decision; nothing the model generates is ever
+spoken to the patient. DTMF keypad (1 = yes, 2 = no) works on every question,
+so the call survives a noisy room and a dead model API.
+
+**Conversation design that came out of live testing:**
+- The stopped-med check is asked in the affirmative ("Are you *still* taking
+  it?") — "you are no longer taking it?" is a negation trap for elderly
+  patients and classifiers alike.
+- Unambiguous replies ("Yes.", "No.") are classified by regex instantly and
+  never depend on a model; only nuanced phrasing goes to the LLM.
+- Patient questions are acknowledged, never answered: clinical ones get a
+  scripted deflection + RED; logistical ones ("when was it canceled?") are
+  queued for the human callback + AMBER.
+- Reprompts escalate gently: "Sorry — was that a yes or a no?" before any
+  keypad instructions.
 
 ## Quickstart
 
@@ -67,15 +81,17 @@ open http://localhost:8000/dashboard
 ```
 app/
   main.py            FastAPI app: Twilio webhooks, call trigger, status API, dashboard
+  relay.py           ConversationRelay websocket transport (VOICE_MODE=relay)
   state_machine.py   The conversation: states, transitions, escalation triggers
-  llm.py             Model adapter: regex fallback → Ollama (Gemma/MedGemma) → Groq → Gemini
+  llm.py             Intent classifier: regex first, then Groq/Ollama/Gemini
   escalation.py      Amber/Red SMS via Twilio (logs instead if no creds)
   store.py           In-memory session store (per-call state)
   config.py          Env config
-  data/patients.json Margaret (green path) + Harold (red path)
-dashboard/index.html Minimal polling triage board (replace with Lovable build if time)
+  data/patients.json Margaret + Harold (fake numbers — real ones go in .env)
+dashboard/index.html Nurse triage board: action queue, live transcript, med lists
 scripts/
   test_conversation.py  Text-mode simulator — develop the conversation with no phone
+  test_relay.py         Speak the ConversationRelay protocol locally, no phone
   trigger_call.py       Kick off an outbound Twilio call
 docs/
   GOLIVE.md          Twilio + Groq wiring checklist — read this to start testing
@@ -92,6 +108,6 @@ CLAUDE.md            Pointer to AGENTS.md for Claude Code
 1. **P0 — text simulator green path**: full Margaret conversation in the terminal. No phone, no model API (regex classifier).
 2. **P1 — real call, structured**: Twilio Voice + `<Gather>` (DTMF + basic speech), Harold red path, escalation SMS fires.
 3. **P2 — LLM understanding**: natural-language answers classified by Gemma/MedGemma; DTMF stays as fallback.
-4. **P3 — polish**: Lovable dashboard, ConversationRelay free-form voice (stretch), backup demo video.
+4. **P3 — polish**: nurse triage dashboard, ConversationRelay streaming voice — both shipped. Backup demo video.
 
 If time runs out at any phase boundary, we still have a working demo.
