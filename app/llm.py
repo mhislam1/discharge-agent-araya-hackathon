@@ -38,7 +38,9 @@ SYSTEM_PROMPT = (
     "Q: You are no longer taking Warfarin? R: well I still take it sometimes "
     "-> {\"intent\": \"no\", \"note\": \"still taking Warfarin\"}\n"
     "Q: Have you been taking it every morning? R: should I take it with food? "
-    "-> {\"intent\": \"clinical_question\", \"note\": \"asks how to take it\"}"
+    "-> {\"intent\": \"clinical_question\", \"note\": \"asks how to take it\"}\n"
+    "Q: Have you been taking it once every morning? R: I take it at night "
+    "-> {\"intent\": \"no\", \"note\": \"taking at night instead of morning\"}"
 )
 
 _HEDGE = re.compile(r"\b(not sure|unsure|maybe|don'?t know|i guess|kind of|"

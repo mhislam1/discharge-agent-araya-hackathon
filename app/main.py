@@ -29,9 +29,17 @@ def _twiml(inner: str) -> Response:
         media_type="application/xml")
 
 
+# vocabulary bias for speech recognition — med names get mangled otherwise
+SPEECH_HINTS = ("yes,no,correct,I stopped,still taking it,picked it up,pharmacy,"
+                "every morning,every night,once a day,twice a day,"
+                "Lisinopril,Eliquis,Warfarin,Amlodipine,ibuprofen,"
+                "dizzy,lightheaded,bruising,bleeding")
+
+
 def _gather(say: str, pid: str) -> str:
     action = f"{config.PUBLIC_BASE_URL}/voice/input?pid={pid}"
     return (f'<Gather input="dtmf speech" numDigits="1" speechTimeout="auto" '
+            f'speechModel="experimental_conversations" hints="{SPEECH_HINTS}" '
             f'action="{action}" method="POST">'
             f'<Say voice="Polly.Joanna">{say}</Say></Gather>'
             f'<Redirect method="POST">{action}</Redirect>')  # no input => reprompt

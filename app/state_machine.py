@@ -27,6 +27,14 @@ def _p(session):  # patient record shortcut
     return session["patient"]
 
 
+def _quote(utterance: str) -> str:
+    """Patient's own words for the escalation SMS; skip DTMF placeholders."""
+    u = utterance.strip()
+    if not u or u.startswith("["):
+        return ""
+    return f' — said: "{u[:60]}"'
+
+
 # ---- prompts (templates, personalized) ----
 def prompt_for(session: dict) -> str:
     p, st = _p(session), session["state"]
@@ -111,7 +119,8 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
     elif st == "PICKUP":
         if intent == "no":
             _escalate(session, "amber", "rx_not_picked_up",
-                      f"has NOT picked up {p['new_med']['name']}")
+                      f"has NOT picked up {p['new_med']['name']}"
+                      f"{_quote(utterance)}")
             say_first = ("Okay — a care coordinator will reach out to help "
                          "with the pharmacy. ")
         session["state"] = "NEW_MEDS"
@@ -119,7 +128,8 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
     elif st == "NEW_MEDS":
         if intent == "no":
             _escalate(session, "amber", "nonadherent_new_med",
-                      f"not taking {p['new_med']['name']} as prescribed")
+                      f"not taking {p['new_med']['name']} as prescribed"
+                      f"{_quote(utterance)}")
             say_first = "Understood — I'll note that for your care team. "
         session["state"] = "STOPPED"
 
