@@ -53,11 +53,13 @@ async def voice_start(pid: str):
     if not patient:
         return _twiml('<Say>Unknown patient. Goodbye.</Say><Hangup/>')
     if config.VOICE_MODE == "relay":
+        # no query string on the wss url — Twilio may reject it (cf. error 31920);
+        # pid travels via <Parameter> -> setup.customParameters instead
         ws_url = (config.PUBLIC_BASE_URL.replace("https://", "wss://")
-                  .replace("http://", "ws://") + f"/relay?pid={pid}")
+                  .replace("http://", "ws://") + "/relay")
         return _twiml(
             f'<Connect><ConversationRelay url="{ws_url}" dtmfDetection="true" '
-            f'interruptible="true">'
+            f'interruptible="any">'
             f'<Parameter name="pid" value="{pid}"/></ConversationRelay></Connect>')
     session = store.new_session(pid, patient)
     first = state_machine.prompt_for(session)

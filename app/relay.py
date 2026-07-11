@@ -22,9 +22,28 @@ async def relay(ws: WebSocket):
     async def end() -> None:
         await ws.send_text(json.dumps({"type": "end"}))
 
+    async def respond(say: str) -> bool:
+        """Speak the next line; on the final line let TTS finish, then end.
+        Returns True when the call is over."""
+        await speak(say)
+        if session["done"]:
+            await asyncio.sleep(min(20.0, max(4.0, len(say.split()) / 2.5)))
+            await end()
+        return session["done"]
+
     try:
         while True:
-            msg = json.loads(await ws.receive_text())
+            try:
+                # dead air: Gather mode reprompts via <Redirect>; here we time out
+                # (budget covers our TTS playing + the patient thinking)
+                raw = await asyncio.wait_for(ws.receive_text(), timeout=25.0)
+            except asyncio.TimeoutError:
+                if not session or session["done"]:
+                    continue
+                if await respond(state_machine.advance(session, "unclear", "[silence]")):
+                    break
+                continue
+            msg = json.loads(raw)
             t = msg.get("type")
             if t == "setup":
                 pid = (msg.get("customParameters") or {}).get("pid") or ws.query_params.get("pid", "")
@@ -50,11 +69,7 @@ async def relay(ws: WebSocket):
                     result = await asyncio.to_thread(llm.classify, utter, ctx)
                     intent = result["intent"]
                 say = state_machine.advance(session, intent, utter)
-                await speak(say)
-                if session["done"]:
-                    # let TTS finish before ending the session (rough words-per-second pacing)
-                    await asyncio.sleep(min(20.0, max(4.0, len(say.split()) / 2.5)))
-                    await end()
+                if await respond(say):
                     break
             elif t == "interrupt":
                 pass  # patient barged in; CR already stopped TTS — nothing to do
