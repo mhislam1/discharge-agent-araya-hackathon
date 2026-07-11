@@ -50,9 +50,11 @@ def prompt_for(session: dict) -> str:
         return (f"Have you been taking {p['new_med']['name']} "
                 f"{p['new_med']['schedule_phrase']}?")
     if st == "STOPPED":
+        # asked in the affirmative on purpose: "you are no longer taking it?"
+        # is a negation trap — "no" is ambiguous for patients AND classifiers
         return (f"One more important check. The hospital stopped your previous "
-                f"medication, {p['stopped_med']['name']}. Just to confirm — "
-                f"you are no longer taking it?")
+                f"medication, {p['stopped_med']['name']} — you should not be "
+                f"taking it anymore. Are you still taking it, even now and then?")
     if st == "SYMPTOMS":
         return p["symptom_checks"][session["symptom_idx"]]
     if st == "CLOSE":
@@ -95,6 +97,14 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
                   f"asked for medical advice mid-call: \"{utterance[:80]}\"")
         return DEFLECTION_SCRIPT + " Now, back to my question. " + prompt_for(session)
 
+    # global rule: non-clinical questions — acknowledge, queue for the callback
+    if intent == "question":
+        _escalate(session, "amber", "patient_question",
+                  f"asked mid-call: \"{utterance[:80]}\" — answer on callback")
+        return ("Good question — I can't answer that myself, but your care team "
+                "will cover it when they call you back. For now — "
+                + prompt_for(session))
+
     # global rule: unclear answers
     if intent == "unclear":
         session["unclear_streak"] += 1
@@ -104,9 +114,10 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
             session["done"] = True
             return ("I'm having trouble hearing you, so I'll have someone from "
                     "your care team call you directly. Take care.")
-        # first miss: short nudge; second: full question again + keypad help
+        # first miss: short nudge (at GREET just repeat the greeting — people
+        # answer the phone with "Hello?"); second: full question + keypad help
         if session["unclear_streak"] == 1:
-            return REPROMPT_SOFT
+            return prompt_for(session) if st == "GREET" else REPROMPT_SOFT
         return REPROMPT_DTMF + " " + prompt_for(session)
     session["unclear_streak"] = 0
 
@@ -138,9 +149,8 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
         session["state"] = "STOPPED"
 
     elif st == "STOPPED":
-        # NOTE: question is "you are NO LONGER taking it?"
-        # yes => safely stopped; no => STILL taking it => RED
-        if intent == "no":
+        # question is "Are you STILL taking it?" — yes = danger
+        if intent == "yes":
             _escalate(session, "red", "taking_stopped_med",
                       f"reports taking BOTH {p['stopped_med']['name']} (stopped "
                       f"{p['discharged']}) and {p['new_med']['name']} — "

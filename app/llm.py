@@ -19,36 +19,40 @@ from . import config
 SYSTEM_PROMPT = (
     "You classify a patient's short spoken reply during a medication check-in "
     "call. Given the QUESTION asked and the patient's REPLY, output ONLY JSON: "
-    "{\"intent\": \"yes\"|\"no\"|\"unclear\"|\"clinical_question\", "
+    "{\"intent\": \"yes\"|\"no\"|\"unclear\"|\"question\"|\"clinical_question\", "
     "\"note\": \"<=12 words or empty\"}.\n"
     "Rules:\n"
-    "- The intent answers the QUESTION as asked. Mind negation carefully: if the "
-    "question is 'you are no longer taking X?', then 'right, I stopped' = yes, "
-    "and 'I still take it' = no.\n"
+    "- The intent answers the QUESTION as asked; mind negation carefully.\n"
     "- clinical_question: patient asks for medical advice, dosing, interactions, "
     "or reassurance about symptoms.\n"
-    "- unclear: anything that doesn't clearly answer the question.\n"
+    "- question: the patient asks any OTHER question (logistics, dates, records, "
+    "who is calling). If unsure between question and clinical_question, choose "
+    "clinical_question.\n"
+    "- unclear: doesn't answer the question and isn't a question.\n"
     "Examples:\n"
     "Q: Were you able to pick it up from the pharmacy? R: No. "
     "-> {\"intent\": \"no\", \"note\": \"\"}\n"
     "Q: Were you able to pick it up from the pharmacy? R: yeah got it yesterday "
     "-> {\"intent\": \"yes\", \"note\": \"\"}\n"
-    "Q: You are no longer taking Warfarin? R: no, I stopped it "
-    "-> {\"intent\": \"yes\", \"note\": \"confirmed stopped\"}\n"
-    "Q: You are no longer taking Warfarin? R: well I still take it sometimes "
-    "-> {\"intent\": \"no\", \"note\": \"still taking Warfarin\"}\n"
+    "Q: Are you still taking Warfarin? R: no, I stopped it "
+    "-> {\"intent\": \"no\", \"note\": \"stopped as instructed\"}\n"
+    "Q: Are you still taking Warfarin? R: well, sometimes at night "
+    "-> {\"intent\": \"yes\", \"note\": \"still taking it sometimes\"}\n"
     "Q: Have you been taking it every morning? R: should I take it with food? "
     "-> {\"intent\": \"clinical_question\", \"note\": \"asks how to take it\"}\n"
     "Q: Have you been taking it once every morning? R: I take it at night "
-    "-> {\"intent\": \"no\", \"note\": \"taking at night instead of morning\"}"
+    "-> {\"intent\": \"no\", \"note\": \"taking at night instead of morning\"}\n"
+    "Q: Are you still taking Warfarin? R: when was it canceled? "
+    "-> {\"intent\": \"question\", \"note\": \"asks when it was stopped\"}"
 )
 
 _HEDGE = re.compile(r"\b(not sure|unsure|maybe|don'?t know|i guess|kind of|"
                     r"sort of|i think so|possibly|perhaps)\b", re.I)
+# NOTE: no "stopped"/"still taking" shortcuts here — their meaning depends on
+# the question asked, so they must fall through to the LLM (context-aware).
 _YES = re.compile(r"\b(yes|yeah|yep|yup|correct|right|sure|i (did|have|do)|"
-                  r"that's right|stopped|of course|okay|ok|fine)\b", re.I)
-_NO = re.compile(r"\b(no|nope|nah|not yet|haven'?t|didn'?t|don'?t|never|"
-                 r"still tak|keep tak|kept tak)\b", re.I)
+                  r"that's right|of course|okay|ok|fine)\b", re.I)
+_NO = re.compile(r"\b(no|nope|nah|not yet|haven'?t|didn'?t|don'?t|never)\b", re.I)
 _CLINICAL = re.compile(r"\b(should i|can i take|is it (safe|ok(ay)?)|what if i|"
                        r"interact|double dose|instead of|how (much|many)|"
                        r"ibuprofen|aspirin|advil|tylenol)\b.*\?|"
@@ -75,7 +79,7 @@ def _parse(text: str) -> dict:
     m = re.search(r"\{.*\}", text, re.S)
     obj = json.loads(m.group(0)) if m else {}
     intent = obj.get("intent", "unclear")
-    if intent not in ("yes", "no", "unclear", "clinical_question"):
+    if intent not in ("yes", "no", "unclear", "question", "clinical_question"):
         intent = "unclear"
     return {"intent": intent, "note": str(obj.get("note", ""))[:120]}
 

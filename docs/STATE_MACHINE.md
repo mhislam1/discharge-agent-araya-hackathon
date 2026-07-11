@@ -24,7 +24,7 @@ Keep this file and `app/state_machine.py` in sync. Spec first, code second.
 | 1 | GREET | "Hi, is this {name}? This is the automated care assistant calling on behalf of {practice} after your recent hospital stay. This will take about two minutes. Is now an okay time?" | → 2 | polite goodbye; **AMBER** `declined_checkin`; END |
 | 2 | PICKUP | "You were prescribed a new medication, {new_med.name}. Were you able to pick it up from the pharmacy?" | → 3 | **AMBER** `rx_not_picked_up` ("coordinator will help"); → 3 |
 | 3 | NEW_MEDS | "Have you been taking {new_med.name} {new_med.schedule_phrase}?" | → 4 | **AMBER** `nonadherent_new_med`; → 4 |
-| 4 | STOPPED | "One more important check. The hospital **stopped** your previous medication, {stopped_med.name}. Just to confirm — you are no longer taking it?" | → 5 | **RED** `taking_stopped_med` (e.g. duplicate anticoagulation); speak SAFE_HOLD script; → 5 |
+| 4 | STOPPED | "One more important check. The hospital **stopped** your previous medication, {stopped_med.name} — you should not be taking it anymore. Are you **still taking it**, even now and then?" (asked in the affirmative — "no longer taking it?" is a negation trap) | yes ⇒ **RED** `taking_stopped_med` (e.g. duplicate anticoagulation); speak SAFE_HOLD script; → 5 | no ⇒ → 5 |
 | 5 | SYMPTOMS | Per patient `symptom_checks[]`, asked one at a time: e.g. "Have you noticed any unusual bruising or bleeding?" | any yes ⇒ **RED** `symptom_flag`; next check | next check; after last → 6 |
 | 6 | CLOSE | Green: "That all sounds good, {name}. Your care team can see this update…" / If escalated: "…your nurse will be in touch shortly. Please don't change anything until you hear from them." | END | END |
 
@@ -57,4 +57,12 @@ reached wins; red > amber > green). Dashboard reads this.
 ## Demo patients
 
 - **margaret** — everything yes ⇒ pure green path.
-- **harold** — answers "no / still taking it" in STOPPED ⇒ the RED demo moment.
+- **harold** — answers "yes / still taking it" in STOPPED ⇒ the RED demo moment.
+
+## Intents
+
+`yes | no | unclear | question | clinical_question` — `question` is a
+non-clinical patient question (logistics, dates, records): acknowledged with a
+template, AMBER `patient_question` so the callback answers it. When the model
+is unsure between `question` and `clinical_question` it must pick
+`clinical_question` (fail toward the stronger escalation).
