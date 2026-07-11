@@ -17,8 +17,14 @@ one on the terminal. Everything degrades gracefully if a step is skipped
 
 ## 2. Real patient phones
 
-Edit `app/data/patients.json`: replace the fake `+1555...` numbers for
-`margaret` and `harold` with the actual phones teammates will answer.
+Put the actual phones teammates will answer in `.env` (**never** in
+`app/data/patients.json` — the repo is public and that file is tracked):
+
+```
+PATIENT_PHONE_MARGARET=+1...
+PATIENT_PHONE_HAROLD=+1...
+```
+
 **This is the step everyone forgets.**
 
 Trial account? EVERY number involved (patients + nurse + coordinator) must be

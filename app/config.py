@@ -35,5 +35,10 @@ LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "1.5"))    # voice latency budg
 
 
 def load_patients() -> dict:
+    """patients.json ships with FAKE numbers (the repo is public). Real demo
+    phones live in .env as PATIENT_PHONE_<ID>, e.g. PATIENT_PHONE_HAROLD."""
     with open(BASE_DIR / "data" / "patients.json") as f:
-        return json.load(f)
+        patients = json.load(f)
+    for pid, p in patients.items():
+        p["phone"] = os.getenv(f"PATIENT_PHONE_{pid.upper()}", p["phone"])
+    return patients
