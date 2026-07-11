@@ -104,7 +104,7 @@ async def status():
         if s:
             row.update(status=s["status"], state=s["state"], done=s["done"],
                        seq=s["seq"], escalations=s["escalations"],
-                       transcript=s["transcript"][-12:])
+                       transcript=s["transcript"])
         out.append(row)
     return out
 

@@ -18,15 +18,31 @@ from . import config
 
 SYSTEM_PROMPT = (
     "You classify a patient's short spoken reply during a medication check-in "
-    "call. Given the QUESTION asked and the patient's REPLY, output ONLY a JSON "
-    "object: {\"intent\": \"yes\"|\"no\"|\"unclear\"|\"clinical_question\", "
-    "\"note\": \"<=12 words of useful detail or empty\"}. "
-    "Use clinical_question if the patient asks for medical advice, dosing "
-    "guidance, drug-interaction info, or reassurance about symptoms. "
-    "Mind negation: for 'you are no longer taking it?', 'right, I stopped' = yes; "
-    "'I still take it' = no. No prose, JSON only."
+    "call. Given the QUESTION asked and the patient's REPLY, output ONLY JSON: "
+    "{\"intent\": \"yes\"|\"no\"|\"unclear\"|\"clinical_question\", "
+    "\"note\": \"<=12 words or empty\"}.\n"
+    "Rules:\n"
+    "- The intent answers the QUESTION as asked. Mind negation carefully: if the "
+    "question is 'you are no longer taking X?', then 'right, I stopped' = yes, "
+    "and 'I still take it' = no.\n"
+    "- clinical_question: patient asks for medical advice, dosing, interactions, "
+    "or reassurance about symptoms.\n"
+    "- unclear: anything that doesn't clearly answer the question.\n"
+    "Examples:\n"
+    "Q: Were you able to pick it up from the pharmacy? R: No. "
+    "-> {\"intent\": \"no\", \"note\": \"\"}\n"
+    "Q: Were you able to pick it up from the pharmacy? R: yeah got it yesterday "
+    "-> {\"intent\": \"yes\", \"note\": \"\"}\n"
+    "Q: You are no longer taking Warfarin? R: no, I stopped it "
+    "-> {\"intent\": \"yes\", \"note\": \"confirmed stopped\"}\n"
+    "Q: You are no longer taking Warfarin? R: well I still take it sometimes "
+    "-> {\"intent\": \"no\", \"note\": \"still taking Warfarin\"}\n"
+    "Q: Have you been taking it every morning? R: should I take it with food? "
+    "-> {\"intent\": \"clinical_question\", \"note\": \"asks how to take it\"}"
 )
 
+_HEDGE = re.compile(r"\b(not sure|unsure|maybe|don'?t know|i guess|kind of|"
+                    r"sort of|i think so|possibly|perhaps)\b", re.I)
 _YES = re.compile(r"\b(yes|yeah|yep|yup|correct|right|sure|i (did|have|do)|"
                   r"that's right|stopped|of course|okay|ok|fine)\b", re.I)
 _NO = re.compile(r"\b(no|nope|nah|not yet|haven'?t|didn'?t|don'?t|never|"
@@ -41,6 +57,8 @@ def _regex_classify(utterance: str) -> dict:
     u = utterance.strip()
     if _CLINICAL.search(u):
         return {"intent": "clinical_question", "note": ""}
+    if _HEDGE.search(u):  # "not sure" must not match the "sure" in _YES
+        return {"intent": "unclear", "note": ""}
     no, yes = bool(_NO.search(u)), bool(_YES.search(u))
     if no and not yes:
         return {"intent": "no", "note": ""}
@@ -102,11 +120,18 @@ _PROVIDERS = {"ollama": _via_ollama, "groq": _via_groq, "gemini_api": _via_gemin
 
 
 def classify(utterance: str, question_context: str) -> dict:
-    """Never raises. Model failure degrades to regex (invariant #4)."""
+    """Never raises. Model failure degrades to regex (invariant #4).
+
+    Regex goes FIRST: unambiguous replies ("Yes.", "No.", "should I…?") are
+    decided instantly and never depend on a model; only replies the regex
+    can't decide (mixed signals, free-form phrasing) go to the LLM."""
+    guess = _regex_classify(utterance)
+    if guess["intent"] != "unclear":
+        return guess
     fn = _PROVIDERS.get(config.LLM_PROVIDER)
     if fn:
         try:
             return fn(utterance, question_context)
         except Exception as e:  # timeout, bad JSON, network — all equivalent here
             print(f"[llm] {config.LLM_PROVIDER} failed ({e!r}); regex fallback")
-    return _regex_classify(utterance)
+    return guess

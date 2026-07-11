@@ -71,8 +71,14 @@ def _escalate(session: dict, level: str, trigger: str, detail: str) -> None:
 def advance(session: dict, intent: str, utterance: str = "") -> str:
     """Consume one classified patient answer; return the next thing to SAY.
     Sets session['done'] when the call should end."""
-    p, st = _p(session), session["state"]
     session["transcript"].append({"who": "patient", "text": utterance or intent})
+    say = _advance(session, intent, utterance)
+    session["transcript"].append({"who": "agent", "text": say})
+    return say
+
+
+def _advance(session: dict, intent: str, utterance: str) -> str:
+    p, st = _p(session), session["state"]
 
     # global rule: clinical questions (invariant #1)
     if intent == "clinical_question":
@@ -141,10 +147,6 @@ def advance(session: dict, intent: str, utterance: str = "") -> str:
         session["done"] = True
         if session["status"] == "in_call":
             session["status"] = "green"
-        closing = prompt_for(session)
-        session["transcript"].append({"who": "agent", "text": say_first + closing})
-        return say_first + closing
+        return say_first + prompt_for(session)
 
-    nxt = prompt_for(session)
-    session["transcript"].append({"who": "agent", "text": say_first + nxt})
-    return say_first + nxt
+    return say_first + prompt_for(session)
