@@ -16,10 +16,11 @@ DEFLECTION_SCRIPT = (
     "I'm an automated assistant and can't give medical advice."
 )
 SAFE_HOLD = (
-    "Thank you for telling me — that's exactly the kind of thing we check. "
-    "I'm letting your nurse know right now, and someone will call you back "
-    "shortly. Please don't change anything until you hear from them."
+    "Thank you for telling me. I'm letting your nurse know right now — "
+    "someone will call you back shortly. Please don't change anything "
+    "until you hear from them."
 )
+REPROMPT_SOFT = "Sorry — was that a yes or a no?"
 REPROMPT_DTMF = "Sorry, I didn't catch that. Press 1 for yes, or 2 for no."
 
 
@@ -103,6 +104,9 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
             session["done"] = True
             return ("I'm having trouble hearing you, so I'll have someone from "
                     "your care team call you directly. Take care.")
+        # first miss: short nudge; second: full question again + keypad help
+        if session["unclear_streak"] == 1:
+            return REPROMPT_SOFT
         return REPROMPT_DTMF + " " + prompt_for(session)
     session["unclear_streak"] = 0
 
@@ -141,7 +145,9 @@ def _advance(session: dict, intent: str, utterance: str) -> str:
                       f"reports taking BOTH {p['stopped_med']['name']} (stopped "
                       f"{p['discharged']}) and {p['new_med']['name']} — "
                       f"{p['stopped_med']['risk_note']}")
-            say_first = SAFE_HOLD + " Just a couple more quick questions. "
+            n = len(p["symptom_checks"])
+            say_first = SAFE_HOLD + (" One last quick question. " if n == 1
+                                     else " A few more quick questions. ")
         session["state"] = "SYMPTOMS"
         session["symptom_idx"] = 0
 

@@ -33,9 +33,13 @@ Keep this file and `app/state_machine.py` in sync. Spec first, code second.
 - `DEFLECTION_SCRIPT`: "That's an important question for your nurse, and I want
   you to get the right answer — I'm flagging it right now so they call you back.
   I'm an automated assistant and can't give medical advice."
-- `SAFE_HOLD` (after RED in state 4): "Thank you for telling me — that's exactly
-  the kind of thing we check. I'm letting your nurse know right now, and someone
-  will call you back shortly. Please don't change anything until you hear from them."
+- `SAFE_HOLD` (after RED in state 4): "Thank you for telling me. I'm letting
+  your nurse know right now — someone will call you back shortly. Please don't
+  change anything until you hear from them."
+- Reprompts escalate in verbosity: 1st unclear answer → `REPROMPT_SOFT`
+  ("Sorry — was that a yes or a no?", question NOT repeated); 2nd → `REPROMPT_DTMF`
+  (keypad instructions + full question); 3rd → graceful exit + AMBER
+  `unreachable_midcall`. Keeps the agent from lecturing after every stumble.
 
 ## Escalation payloads (SMS)
 
